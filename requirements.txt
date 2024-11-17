@@ -1,0 +1,10 @@
+"""
+Project dependencies file listing all required packages and versions
+for running the test automation framework.
+"""
+selenium>=4.0.0
+behave>=1.2.6
+python-dotenv>=0.19.0
+webdriver-manager>=3.8.0
+pytest>=7.0.0
+pytest-html>=3.0.0
