@@ -3,34 +3,33 @@ name: Web Automation Testing
 
 # Define when this workflow will run
 on:
-  # Run workflow when code is pushed to main branch
+  # Trigger workflow on push to main branch
   push:
     branches: [ main ]
-  # Run workflow when a pull request is made to main branch
+  # Trigger workflow on pull requests to main branch
   pull_request:
     branches: [ main ]
-  # Allow manual triggering of the workflow from GitHub Actions tab
+  # Allow manual triggering from GitHub Actions UI
   workflow_dispatch:
 
-# Define the jobs to run
+# Define jobs to be executed
 jobs:
-  # Single job called "test"
+  # Main test job
   test:
-    # Specify the type of machine to run the job on
+    # Specify runner environment
     runs-on: ubuntu-latest
     
-    # Define strategy for matrix builds
+    # Define build matrix for different configurations
     strategy:
       matrix:
-        # We're using Python 3.9 for this project
         python-version: ['3.9']
 
-    # Steps to execute as part of the job
+    # Sequential steps to execute
     steps:
-    # Step 1: Check out the repository code
+    # Step 1: Check out repository code
     - uses: actions/checkout@v3
 
-    # Step 2: Set up Python environment
+    # Step 2: Setup Python environment
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v4
       with:
@@ -39,55 +38,58 @@ jobs:
     # Step 3: Install Chrome browser
     - name: Install Chrome
       run: |
+        # Update package list
         sudo apt-get update
+        # Install Chrome stable version
         sudo apt-get install -y google-chrome-stable
+        # Verify Chrome installation
         google-chrome --version
-    
-    # Step 4: Install Chrome WebDriver
-    - name: Install Chrome WebDriver
-      run: |
-        # Get Chrome version number
-        CHROME_VERSION=$(google-chrome --version | awk '{print $3}' | awk -F'.' '{print $1}')
-        # Get matching ChromeDriver version
-        CHROMEDRIVER_VERSION=$(curl -s "https://chromedriver.storage.googleapis.com/LATEST_RELEASE_$CHROME_VERSION")
-        # Download and install ChromeDriver
-        wget -N "https://chromedriver.storage.googleapis.com/${CHROMEDRIVER_VERSION}/chromedriver_linux64.zip"
-        unzip chromedriver_linux64.zip
-        chmod +x chromedriver
-        sudo mv chromedriver /usr/local/bin/
-        chromedriver --version
 
-    # Step 5: Install Python dependencies
+    # Step 4: Install Python dependencies
     - name: Install dependencies
       run: |
+        # Upgrade pip to latest version
         python -m pip install --upgrade pip
+        # Install project dependencies
         pip install -r requirements.txt
+        # Ensure webdriver-manager is installed
+        pip install webdriver-manager
 
-    # Step 6: Create environment configuration file
+    # Step 5: Create environment configuration
     - name: Create env file
       run: |
+        # Create .env file with test configuration
         echo "TEST_ENV=qa" >> .env
         echo "BASE_URL=https://play1.automationcamp.ir/index.html" >> .env
         echo "DEFAULT_TIMEOUT=10" >> .env
         echo "EXPLICIT_TIMEOUT=20" >> .env
         echo "BROWSER=chrome" >> .env
-        # Setting headless=True because GitHub Actions runs without GUI
+        # Enable headless mode for CI environment
         echo "HEADLESS=True" >> .env
+        # Enable webdriver-manager
+        echo "USE_WEBDRIVER_MANAGER=True" >> .env
 
-    # Step 7: Run the Behave tests
+    # Step 6: Execute test suite
     - name: Run tests
       run: |
-        # Run specific feature file with pretty formatting and JUnit report
+        # Add current directory to Python path
+        export PYTHONPATH=$PYTHONPATH:$(pwd)
+        # Setup virtual display for headless browser
+        export DISPLAY=:99
+        # Start virtual framebuffer
+        sudo Xvfb :99 -screen 0 1920x1080x24 > /dev/null 2>&1 &
+        # Run Behave tests with JUnit reporting
         behave features/sample_login.feature -f pretty --junit
 
-    # Step 8: Upload test artifacts (always runs, even if tests fail)
+    # Step 7: Save test results and artifacts
     - name: Upload test results
-      if: always()  # This ensures the step runs even if previous steps fail
+      # Run this step even if previous steps fail
+      if: always()
       uses: actions/upload-artifact@v3
       with:
         name: test-results
-        # Specify what to upload
+        # Specify paths to save
         path: |
-          screenshots/  # Test failure screenshots
-          reports/     # Test reports
-          *.xml       # JUnit XML reports
+          screenshots/    # Test failure screenshots
+          reports/       # Test execution reports
+          *.xml         # JUnit XML reports
