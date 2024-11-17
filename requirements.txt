@@ -1,7 +1,4 @@
-"""
-Project dependencies file listing all required packages and versions
-for running the test automation framework.
-"""
+
 # Core dependencies
 selenium==4.18.1
 behave==1.2.6
