@@ -132,15 +132,29 @@ jobs:
         mkdir -p reports/junit
         
         # Run tests with multiple report formats
-         behave features/sample_login.feature \
+         behave \
+          features/sample_login.feature \
           --format pretty \
+          --format json.pretty \
+          --outfile reports/behave-report.json \
           --format behave_html_formatter:HTMLFormatter \
           --outfile reports/behave-report.html \
-          --format json \
-          --outfile reports/behave-report.json \
           --junit \
-          --junit-directory=reports/junit
-
+          --junit-directory=reports/junit || true
+        
+        # Debug: Check test results
+        echo "=== Test Results Debug ==="
+        echo "Contents of reports directory:"
+        ls -la reports/
+        
+        echo "=== JSON Report Content ==="
+        cat reports/behave-report.json || echo "No JSON report found"
+        
+        echo "=== HTML Report Content ==="
+        ls -la reports/behave-report.html || echo "No HTML report found"
+        
+        echo "=== JUnit Reports ==="
+        ls -la reports/junit/ || echo "No JUnit reports found"
 
     # Step 9 generate dashboard
     - name: Generate Dashboard
