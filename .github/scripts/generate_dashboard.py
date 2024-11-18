@@ -193,10 +193,111 @@ class DashboardGenerator:
         """
         chart_config = self.generate_chart_config(results)
         
-        # Generate HTML template (previous HTML template code remains the same)
         html = f"""<!DOCTYPE html>
-        <!-- Previous HTML template code -->
-        """
+<html>
+<head>
+    <title>Test Automation Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        .chart-container {{
+            position: relative;
+            height: 300px;
+            width: 100%;
+        }}
+    </style>
+</head>
+<body class="bg-gray-50">
+    <div class="container mx-auto px-4 py-8">
+        <div class="flex justify-between items-center mb-8">
+            <h1 class="text-3xl font-bold text-gray-800">Test Automation Dashboard</h1>
+            <div class="text-sm text-gray-500">Last Updated: {results['timestamp']}</div>
+        </div>
+        
+        <!-- Summary Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+            <div class="bg-white rounded-lg shadow p-6">
+                <h3 class="text-gray-500 text-sm font-medium">Total Scenarios</h3>
+                <p class="text-3xl font-bold mt-2">{results['total_scenarios']}</p>
+            </div>
+            <div class="bg-green-50 rounded-lg shadow p-6">
+                <h3 class="text-gray-500 text-sm font-medium">Passed</h3>
+                <p class="text-3xl font-bold text-green-600 mt-2">{results['passed_scenarios']}</p>
+                <p class="text-sm text-gray-500 mt-2">{results['passed_steps']} steps passed</p>
+            </div>
+            <div class="bg-red-50 rounded-lg shadow p-6">
+                <h3 class="text-gray-500 text-sm font-medium">Failed</h3>
+                <p class="text-3xl font-bold text-red-600 mt-2">{results['failed_scenarios']}</p>
+                <p class="text-sm text-gray-500 mt-2">{results['failed_steps']} steps failed</p>
+            </div>
+            <div class="bg-yellow-50 rounded-lg shadow p-6">
+                <h3 class="text-gray-500 text-sm font-medium">Skipped</h3>
+                <p class="text-3xl font-bold text-yellow-600 mt-2">{results['skipped_scenarios']}</p>
+            </div>
+        </div>
+        
+        <!-- Charts Row -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+            <div class="bg-white rounded-lg shadow p-6">
+                <h3 class="text-lg font-semibold mb-4">Scenario Results</h3>
+                <div class="chart-container">
+                    <canvas id="scenarioChart"></canvas>
+                </div>
+            </div>
+            <div class="bg-white rounded-lg shadow p-6">
+                <h3 class="text-lg font-semibold mb-4">Feature Status</h3>
+                <div class="chart-container">
+                    <canvas id="featureChart"></canvas>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Feature Details Table -->
+        <div class="bg-white rounded-lg shadow overflow-hidden">
+            <div class="px-6 py-4 border-b border-gray-200">
+                <h3 class="text-lg font-semibold">Feature Details</h3>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Feature</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Passed</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Failed</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Pass Rate</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200">
+                        {''.join([
+                            f"""
+                            <tr>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="text-sm font-medium text-gray-900">{feature['name']}</div>
+                                    <div class="text-sm text-gray-500">{feature['description'][:50]}...</div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{feature['scenarios']}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-green-600">{feature['passed_scenarios']}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-red-600">{feature['failed_scenarios']}</td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="text-sm text-gray-900">
+                                        {round(feature['passed_scenarios'] / feature['scenarios'] * 100 if feature['scenarios'] > 0 else 0, 1)}%
+                                    </div>
+                                </td>
+                            </tr>
+                            """ for feature in results['features']
+                        ])}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        {chart_config}
+    </script>
+</body>
+</html>"""
         
         # Ensure reports directory exists
         os.makedirs('reports', exist_ok=True)
