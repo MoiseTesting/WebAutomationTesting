@@ -1,110 +1,151 @@
-# Name of the GitHub Actions workflow - appears in the Actions tab
+# Name of the workflow as it appears in GitHub Actions
 name: Web Automation Testing
 
 # Define the events that will trigger this workflow
 on:
-  # Trigger on push events to main branch
+  # Run on pushes to main branch
   push:
     branches: [ main ]
-  # Trigger on pull request events to main branch
+  # Run on pull requests to main branch
   pull_request:
     branches: [ main ]
-  # Allow manual triggering from the Actions tab
+  # Allow manual triggering from Actions tab
   workflow_dispatch:
 
-# Define the jobs to run in this workflow
+# Define the jobs to run
 jobs:
-  # Main test job
+  # Main test execution job
   test:
-    # Specify the type of runner to use (Ubuntu latest version)
+    # Specify the runner environment
     runs-on: ubuntu-latest
-    
-    # Define matrix strategy for different configurations
-    strategy:
-      matrix:
-        # Currently using Python 3.9 only, can be expanded for multiple versions
-        python-version: ['3.9']
 
-    # Sequential steps to be executed in the job
+    # Define steps to be executed
     steps:
     # Step 1: Check out the repository code
     - uses: actions/checkout@v3
 
-    # Step 2: Set up Python environment with specified version
-    - name: Set up Python ${{ matrix.python-version }}
+    # Step 2: Set up Python environment
+    - name: Set up Python
       uses: actions/setup-python@v4
       with:
-        python-version: ${{ matrix.python-version }}
+        python-version: '3.9'
 
-    # Step 3: Install Google Chrome browser
+    # Step 3: Install Chrome browser
     - name: Install Chrome
       run: |
-       # Update package list
-       sudo apt-get update
-       # Download and install Chrome
-       wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
-       sudo apt install -y ./google-chrome-stable_current_amd64.deb
-       # Clean up downloaded file
-       rm google-chrome-stable_current_amd64.deb
-       # Verify Chrome installation
-       google-chrome --version
+        # Update package list
+        sudo apt-get update
+        # Install required utilities
+        sudo apt-get install -y wget unzip
+        # Download Chrome package
+        wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
+        # Install Chrome
+        sudo apt install -y ./google-chrome-stable_current_amd64.deb
+        # Verify installation
+        google-chrome --version
 
     # Step 4: Install Python dependencies
     - name: Install dependencies
       run: |
         # Upgrade pip to latest version
         python -m pip install --upgrade pip
-        # Install project dependencies from requirements.txt
+        # Install project dependencies
         pip install -r requirements.txt
 
-    # Step 5: Create environment configuration file
+    # Step 5: Create required directories with .gitkeep files
+    - name: Create directories
+      run: |
+        # Create directory for screenshots with .gitkeep
+        mkdir -p screenshots
+        touch screenshots/.gitkeep
+        
+        # Create directory for reports with .gitkeep
+        mkdir -p reports
+        touch reports/.gitkeep
+        
+        # Create directory for JUnit reports
+        mkdir -p junit-reports
+        touch junit-reports/.gitkeep
+
+    # Step 6: Create environment configuration
     - name: Create env file
       run: |
-        # Set test environment to QA
+        # Set environment variables
         echo "TEST_ENV=qa" >> .env
-        # Set base URL for tests
         echo "BASE_URL=https://play1.automationcamp.ir/index.html" >> .env
-        # Set timeout values
         echo "DEFAULT_TIMEOUT=10" >> .env
         echo "EXPLICIT_TIMEOUT=20" >> .env
-        # Set browser configuration
         echo "BROWSER=chrome" >> .env
-        # Enable headless mode for CI environment
-        echo "HEADLESS=True" >> .env
 
-    # Step 6: Set up virtual display for headless Chrome
+    # Step 7: Setup virtual display for headless testing
     - name: Setup display
       run: |
         # Install X virtual framebuffer
         sudo apt-get install -y xvfb
-        # Set display port
+        # Configure display
         export DISPLAY=:99
         # Start virtual framebuffer in background
         Xvfb :99 -screen 0 1920x1080x24 > /dev/null 2>&1 &
 
-    # Step 7: Execute test suite
+    # Step 8: Execute test suite
     - name: Run tests
+      env:
+        # Set Python path to include project root
+        PYTHONPATH: ${{ github.workspace }}
+        # Set display for browser
+        DISPLAY: :99
+        # Enable unbuffered output
+        PYTHONUNBUFFERED: 1
       run: |
-        # Add current directory to Python path
-        export PYTHONPATH=$PYTHONPATH:$(pwd)
-        # Enable unbuffered output for better logging
-        export PYTHONUNBUFFERED=1
-        # Print Selenium version for debugging
+        # Print Python and Selenium versions for debugging
+        python -c "import sys; print(f'Python version: {sys.version}')"
         python -c "import selenium; print(f'Selenium version: {selenium.__version__}')"
-        # Verify webdriver availability
-        python -c "from selenium import webdriver; print(f'Available webdriver: {webdriver.__file__}')"
-        # Run Behave tests with verbose output and JUnit reporting
-        behave -v features/sample_login.feature -f pretty --junit
+        
+        # Print ChromeDriver info
+        google-chrome --version
+        
+        # Run Behave tests with various output formats
+        behave \
+          features/sample_login.feature \
+          -f pretty \
+          --junit \
+          --junit-directory=junit-reports \
+          -f html -o reports/behave-report.html
 
-    # Step 8: Save test artifacts
+    # Step 9: Upload test artifacts
     - name: Upload test results
       # Ensure this step runs even if tests fail
       if: always()
       uses: actions/upload-artifact@v3
       with:
         name: test-results
-        # Define paths for test artifacts
+        # Define paths for artifacts
         path: |
-          screenshots/    # Directory containing failure screenshots
-          reports/       # Directory containing test reports
-          *.xml         # JUnit XML report files
+          screenshots/     # Test failure screenshots
+          reports/        # Behave HTML reports
+          junit-reports/  # JUnit XML reports
+        # Configure behavior for empty directories
+        if-no-files-found: warn
+
+    # Step 10: Process test results (can be expanded)
+    - name: Process test results
+      # Run this step even if previous steps failed
+      if: always()
+      run: |
+        # Check if JUnit reports exist
+        if [ -d "junit-reports" ]; then
+          echo "JUnit reports generated successfully"
+          ls -l junit-reports/
+        fi
+        
+        # Check if HTML reports exist
+        if [ -d "reports" ]; then
+          echo "HTML reports generated successfully"
+          ls -l reports/
+        fi
+        
+        # Check for screenshots of failures
+        if [ -d "screenshots" ]; then
+          echo "Test failure screenshots:"
+          ls -l screenshots/
+        fi
