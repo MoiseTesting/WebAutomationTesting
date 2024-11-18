@@ -103,15 +103,37 @@ jobs:
         
         # Print ChromeDriver info
         google-chrome --version
+        # Create reports directory structure
+        mkdir -p reports/history
+        mkdir -p reports/screenshots
         
-        # Run Behave tests with various output formats
+        # Run tests with multiple report formats
         behave \
           features/sample_login.feature \
           --format pretty \
+          --format html \
+          -o reports/behave-report.html \
+          --format json \
+          -o reports/behave-report.json \
           --junit \
-          --junit-directory=junit-reports \
-          --format behave_html_formatter:HTMLFormatter \
-          --outfile reports/behave-report.html
+          --junit-directory=reports/junit
+
+
+    # Step 9 generate dashboard
+    - name: Generate Dashboard
+      if: always()
+      run: |
+       python .github/scripts/generate_dashboard.py
+
+    #Step 10 Deploy to GitHub Pages
+    - name: Deploy to GitHub Pages
+      if: always()
+      uses: peaceiris/actions-gh-pages@v3
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        publish_dir: ./reports
+        destination_dir: reports/${{ github.run_number }}
+        keep_files: true
 
     # Step 9: Upload test artifacts
     - name: Upload test results
