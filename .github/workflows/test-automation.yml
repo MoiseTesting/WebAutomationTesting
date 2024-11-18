@@ -110,29 +110,20 @@ jobs:
         # Start virtual framebuffer in background
         Xvfb :99 -screen 0 1920x1080x24 > /dev/null 2>&1 &
 
-    # Step 8: Execute test suite
+    # Step 8: Run tests
     - name: Run tests
       env:
-        # Set Python path to include project root
         PYTHONPATH: ${{ github.workspace }}
-        # Set display for browser
         DISPLAY: :99
-        # Enable unbuffered output
         PYTHONUNBUFFERED: 1
       run: |
-        # Print Python and Selenium versions for debugging
+        # Version info
         python -c "import sys; print(f'Python version: {sys.version}')"
         python -c "import selenium; print(f'Selenium version: {selenium.__version__}')"
-        
-        # Print ChromeDriver info
         google-chrome --version
-        # Create reports directory structure
-        mkdir -p reports/history
-        mkdir -p reports/screenshots
-        mkdir -p reports/junit
-        
-        # Run tests with multiple report formats
-         behave \
+
+        # Run tests
+        behave \
           features/sample_login.feature \
           --format pretty \
           --format json.pretty \
@@ -141,57 +132,54 @@ jobs:
           --outfile reports/behave-report.html \
           --junit \
           --junit-directory=reports/junit || true
-        
-        # Debug: Check test results
-        echo "=== Test Results Debug ==="
-        echo "Contents of reports directory:"
+
+    # Step 9: Debug test results
+    - name: Debug test results
+      if: always()
+      run: |
+        echo "=== Test Output Files ==="
         ls -la reports/
         
-        echo "=== JSON Report Content ==="
-        cat reports/behave-report.json || echo "No JSON report found"
+        echo "=== JSON Content ==="
+        if [ -f reports/behave-report.json ]; then
+          head -n 20 reports/behave-report.json
+        else
+          echo "No JSON report found"
+        fi
         
-        echo "=== HTML Report Content ==="
-        ls -la reports/behave-report.html || echo "No HTML report found"
+        echo "=== HTML Content ==="
+        if [ -f reports/behave-report.html ]; then
+          ls -la reports/behave-report.html
+        else
+          echo "No HTML report found"
+        fi
         
-        echo "=== JUnit Reports ==="
-        ls -la reports/junit/ || echo "No JUnit reports found"
-
-        - name: Debug Test Results
-        if: always()
-        run: |
-          echo "=== Test Output Files ==="
-          ls -la reports/
-          
-          echo "=== JSON Content ==="
-          echo "First 500 chars of behave-report.json:"
-          head -c 500 reports/behave-report.json
-          
-          echo "=== HTML Content ==="
-          echo "First 500 chars of behave-report.html:"
-          head -c 500 reports/behave-report.html
-          
-          echo "=== JUnit Content ==="
+        echo "=== JUnit Content ==="
+        if [ -f reports/junit/TESTS-sample_login.xml ]; then
           cat reports/junit/TESTS-sample_login.xml
+        else
+          echo "No JUnit report found"
+        fi
 
-    # Step 9 generate dashboard
+    # Step 10: Generate dashboard
     - name: Generate Dashboard
       if: always()
       run: |
-       python .github/scripts/generate_dashboard.py
+        python .github/scripts/generate_dashboard.py
 
-    # Step 10 Configure GitHub Pages
+    # Step 11: Setup Pages
     - name: Setup Pages
       if: always()
       uses: actions/configure-pages@v4
 
-    # Step 11 Upload artifact for deployment
+    # Step 12: Upload artifact
     - name: Upload artifact
       if: always()
       uses: actions/upload-pages-artifact@v3
       with:
         path: 'reports'
 
-    #Step 12 Deploy to GitHub Pages
+    # Step 13: Deploy to GitHub Pages
     - name: Deploy to GitHub Pages
       if: always()
       id: deployment
@@ -199,40 +187,27 @@ jobs:
       with:
         token: ${{ secrets.GITHUB_TOKEN }}
 
-    # Step 13: Upload test artifacts
+    # Step 14: Upload test results
     - name: Upload test results
-      # Ensure this step runs even if tests fail
       if: always()
       uses: actions/upload-artifact@v3
       with:
         name: test-results
-        # Define paths for artifacts
         path: |
-          screenshots/     # Test failure screenshots
-          reports/        # Behave HTML reports
-          junit-reports/  # JUnit XML reports
-        # Configure behavior for empty directories
+          screenshots/
+          reports/
+          junit-reports/
         if-no-files-found: warn
 
-    # Step 14: Process test results (can be expanded)
+    # Step 15: Process test results
     - name: Process test results
-      # Run this step even if previous steps failed
       if: always()
       run: |
-        # Check if JUnit reports exist
-        if [ -d "junit-reports" ]; then
-          echo "JUnit reports generated successfully"
-          ls -l junit-reports/
-        fi
-        
-        # Check if HTML reports exist
-        if [ -d "reports" ]; then
-          echo "HTML reports generated successfully"
-          ls -l reports/
-        fi
-        
-        # Check for screenshots of failures
-        if [ -d "screenshots" ]; then
-          echo "Test failure screenshots:"
-          ls -l screenshots/
-        fi
+        for dir in junit-reports reports screenshots; do
+          if [ -d "$dir" ]; then
+            echo "$dir contents:"
+            ls -l "$dir"
+          else
+            echo "$dir not found"
+          fi
+        done
