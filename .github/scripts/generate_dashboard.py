@@ -35,97 +35,53 @@ class DashboardGenerator:
         }
 
     def load_test_results(self):
-        """Load and process test results"""
+        """Load test results from JUnit XML since JSON parsing is failing"""
         results = self.default_results.copy()
         
-        logger.info("Starting test results processing")
-        logger.info(f"Current working directory: {os.getcwd()}")
-        
-        json_path = 'reports/behave-report.json'
-        
-        # Debug: List all files in reports directory
-        if os.path.exists('reports'):
-            logger.info("Files in reports directory:")
-            for root, dirs, files in os.walk('reports'):
-                for file in files:
-                    logger.info(f"  {os.path.join(root, file)}")
-        
-        if not os.path.exists(json_path):
-            logger.warning(f"JSON report not found at: {json_path}")
-            return results
+        junit_path = 'reports/junit/TESTS-sample_login.xml'
         
         try:
-            with open(json_path, 'r', encoding='utf-8') as f:
-                content = f.read().strip()
-                if not content:
-                    logger.warning("JSON file is empty")
-                    return results
-                
-                logger.info(f"Reading JSON content (length: {len(content)})")
-                logger.debug(f"JSON content: {content[:500]}...")  # Log first 500 chars
-                
-                json_results = json.loads(content)
-                if not json_results:
-                    logger.warning("JSON results are empty")
-                    return results
-                
-                # Process each feature
-                for feature in json_results:
-                    feature_stats = {
-                        'name': feature.get('name', 'Unknown'),
-                        'description': feature.get('description', ''),
-                        'scenarios': 0,
-                        'passed_scenarios': 0,
-                        'failed_scenarios': 0,
-                        'skipped_scenarios': 0,
-                        'total_steps': 0,
-                        'passed_steps': 0,
-                        'failed_steps': 0
-                    }
-                    
-                    # Process scenarios
-                    scenarios = feature.get('elements', [])
-                    if scenarios:
-                        feature_stats['scenarios'] = len(scenarios)
-                        for scenario in scenarios:
-                            scenario_status = 'passed'
-                            steps = scenario.get('steps', [])
-                            
-                            if steps:
-                                feature_stats['total_steps'] += len(steps)
-                                for step in steps:
-                                    result = step.get('result', {})
-                                    status = result.get('status', 'skipped')
-                                    
-                                    if status == 'passed':
-                                        feature_stats['passed_steps'] += 1
-                                    elif status == 'failed':
-                                        feature_stats['failed_steps'] += 1
-                                        scenario_status = 'failed'
-                                    
-                            if scenario_status == 'passed':
-                                feature_stats['passed_scenarios'] += 1
-                            else:
-                                feature_stats['failed_scenarios'] += 1
-                    
-                    results['features'].append(feature_stats)
-                    
-                    # Update totals
-                    results['total_scenarios'] += feature_stats['scenarios']
-                    results['passed_scenarios'] += feature_stats['passed_scenarios']
-                    results['failed_scenarios'] += feature_stats['failed_scenarios']
-                    results['total_steps'] += feature_stats['total_steps']
-                    results['passed_steps'] += feature_stats['passed_steps']
-                    results['failed_steps'] += feature_stats['failed_steps']
-                
-                logger.info(f"Processed {len(results['features'])} features")
-                logger.info(f"Total scenarios: {results['total_scenarios']}")
-                
-        except json.JSONDecodeError as e:
-            logger.error(f"JSON decode error: {str(e)}")
-            logger.debug("JSON content causing error:", exc_info=True)
+            tree = ET.parse(junit_path)
+            root = tree.getroot()
+            
+            # Parse test suite data
+            results['total_scenarios'] = int(root.get('tests', 0))
+            results['failed_scenarios'] = int(root.get('failures', 0))
+            results['skipped_scenarios'] = int(root.get('skipped', 0))
+            results['passed_scenarios'] = (results['total_scenarios'] - 
+                                        results['failed_scenarios'] - 
+                                        results['skipped_scenarios'])
+            
+            # Get step counts
+            for testcase in root.findall('.//testcase'):
+                results['total_steps'] += len(testcase.findall('.//step'))
+                # Count passed steps
+                for step in testcase.findall('.//system-out'):
+                    if 'passed' in step.text:
+                        results['passed_steps'] += 1
+            
+            # Process features
+            feature_name = root.get('name', '').split('.')[-1].strip()
+            feature_stats = {
+                'name': feature_name,
+                'description': 'Test automation feature',
+                'scenarios': results['total_scenarios'],
+                'passed_scenarios': results['passed_scenarios'],
+                'failed_scenarios': results['failed_scenarios'],
+                'skipped_scenarios': results['skipped_scenarios'],
+                'total_steps': results['total_steps'],
+                'passed_steps': results['passed_steps'],
+                'failed_steps': results['total_steps'] - results['passed_steps']
+            }
+            results['features'].append(feature_stats)
+            
+            logger.info(f"Processed {results['total_scenarios']} scenarios")
+            logger.info(f"Passed: {results['passed_scenarios']}")
+            logger.info(f"Failed: {results['failed_scenarios']}")
+            logger.info(f"Steps: {results['total_steps']}")
+            
         except Exception as e:
-            logger.error(f"Error loading results: {str(e)}", exc_info=True)
+            logger.error(f"Error processing results: {str(e)}", exc_info=True)
         
         return results
     
