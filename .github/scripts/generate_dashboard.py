@@ -128,6 +128,30 @@ class DashboardGenerator:
             logger.error(f"Error loading results: {str(e)}", exc_info=True)
         
         return results
+    
+    def load_junit_results(self):
+        """Load results from JUnit XML"""
+        junit_path = 'reports/junit/TESTS-sample_login.xml'
+        if os.path.exists(junit_path):
+            try:
+                import xml.etree.ElementTree as ET
+                tree = ET.parse(junit_path)
+                root = tree.getroot()
+                
+                # Log the XML content
+                logger.info(f"JUnit XML content: {ET.tostring(root, encoding='unicode')}")
+                
+                return {
+                    'total_scenarios': int(root.attrib.get('tests', 0)),
+                    'failed_scenarios': int(root.attrib.get('failures', 0)),
+                    'skipped_scenarios': int(root.attrib.get('skipped', 0)),
+                    'passed_scenarios': int(root.attrib.get('tests', 0)) - 
+                                    int(root.attrib.get('failures', 0)) - 
+                                    int(root.attrib.get('skipped', 0))
+                }
+            except Exception as e:
+                logger.error(f"Error reading JUnit results: {str(e)}")
+        return None
 
     def prepare_chart_configs(self, results):
         """Prepare chart configurations"""

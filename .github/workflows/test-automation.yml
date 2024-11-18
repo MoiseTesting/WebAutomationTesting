@@ -156,6 +156,23 @@ jobs:
         echo "=== JUnit Reports ==="
         ls -la reports/junit/ || echo "No JUnit reports found"
 
+        - name: Debug Test Results
+        if: always()
+        run: |
+          echo "=== Test Output Files ==="
+          ls -la reports/
+          
+          echo "=== JSON Content ==="
+          echo "First 500 chars of behave-report.json:"
+          head -c 500 reports/behave-report.json
+          
+          echo "=== HTML Content ==="
+          echo "First 500 chars of behave-report.html:"
+          head -c 500 reports/behave-report.html
+          
+          echo "=== JUnit Content ==="
+          cat reports/junit/TESTS-sample_login.xml
+
     # Step 9 generate dashboard
     - name: Generate Dashboard
       if: always()
