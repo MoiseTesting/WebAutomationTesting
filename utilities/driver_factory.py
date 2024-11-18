@@ -7,6 +7,7 @@ Supports both local and CI/CD environments.
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 from webdriver_manager.chrome import ChromeDriverManager
+from selenium.webdriver.chrome.options import Options
 from utilities.config import Config
 import logging
 import os
@@ -32,19 +33,28 @@ class DriverFactory:
             Exception: If driver creation fails
         """
         try:
-            # Get browser options from config.
-            options = Config.get_browser_options()
+            # Create Chrome options
+            options = Options()
             
-            # Add CI/CD specific options when running in GitHub Actions
+            # Add required CI/CD specific options
             if os.getenv('GITHUB_ACTIONS'):
                 logger.info("Running in GitHub Actions - adding CI/CD specific options")
                 options.add_argument('--no-sandbox')
+                options.add_argument('--headless')
                 options.add_argument('--disable-dev-shm-usage')
                 options.add_argument('--disable-gpu')
                 options.add_argument('--window-size=1920,1080')
+            elif Config.HEADLESS:
+                options.add_argument('--headless')
             
-            # Setup ChromeDriver with automatic version management
-            service = Service(ChromeDriverManager().install())
+            # Setup ChromeDriver with specific version manager
+            driver_manager = ChromeDriverManager()
+            driver_path = driver_manager.install()
+            
+            logger.info(f"ChromeDriver path: {driver_path}")
+            
+            # Create service object
+            service = Service(executable_path=driver_path)
             
             # Create and configure the driver
             driver = webdriver.Chrome(
@@ -58,21 +68,9 @@ class DriverFactory:
                 f"{'headless' if Config.HEADLESS else 'normal'} mode"
             )
             
-            # Set window size for consistency if not headless
-            if not Config.HEADLESS:
-                driver.set_window_size(1920, 1080)
-            
             return driver
             
         except Exception as e:
             # Log detailed error information
             logger.error(f"Failed to create driver: {str(e)}")
             raise
-
-    # Future enhancements:
-    # - Support for other browsers (Firefox, Edge, etc.)
-    # - Custom driver configurations per environment
-    # - Remote WebDriver support
-    # - Container-based browser support
-    # - Proxy configuration support
-    # - Custom capabilities configuration
