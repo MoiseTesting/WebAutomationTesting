@@ -13,6 +13,8 @@ import tempfile
 import urllib.request
 import zipfile
 import stat
+import json
+import re
 
 # Set up logging for this module
 logger = logging.getLogger(__name__)
@@ -24,9 +26,31 @@ class DriverFactory:
     """
     
     @staticmethod
+    def get_chrome_version():
+        """
+        Get the installed Chrome version
+        
+        Returns:
+            str: Chrome version (major.minor.build.patch)
+        """
+        try:
+            # Execute chrome --version command
+            with os.popen('google-chrome --version') as stream:
+                chrome_version = stream.read()
+            
+            # Extract version number using regex
+            version_match = re.search(r'[\d.]+', chrome_version)
+            if version_match:
+                return version_match.group(0)
+            return None
+        except Exception as e:
+            logger.error(f"Failed to get Chrome version: {str(e)}")
+            return None
+    
+    @staticmethod
     def download_chromedriver():
         """
-        Download and setup ChromeDriver manually
+        Download and setup ChromeDriver matching the installed Chrome version
         
         Returns:
             str: Path to the ChromeDriver executable
@@ -35,25 +59,58 @@ class DriverFactory:
             Exception: If download or setup fails
         """
         try:
-            # Define ChromeDriver URL for latest stable version
-            driver_url = "https://storage.googleapis.com/chrome-for-testing-public/stable/linux64/chromedriver-linux64.zip"
+            # Get Chrome version
+            chrome_version = DriverFactory.get_chrome_version()
+            if not chrome_version:
+                raise Exception("Could not determine Chrome version")
             
-            # Create a temporary directory for ChromeDriver
+            # Get major version
+            major_version = chrome_version.split('.')[0]
+            
+            # Construct the version-specific download URL
+            version_url = f"https://googlechromelabs.github.io/chrome-for-testing/known-good-versions-with-downloads.json"
+            
+            # Get versions JSON
+            logger.info("Fetching ChromeDriver versions list")
+            with urllib.request.urlopen(version_url) as response:
+                versions_data = json.loads(response.read())
+            
+            # Find matching version
+            matching_version = None
+            for version in versions_data['versions']:
+                if version['version'].startswith(major_version):
+                    matching_version = version
+                    break
+            
+            if not matching_version:
+                raise Exception(f"No matching ChromeDriver version found for Chrome {chrome_version}")
+            
+            # Find Linux64 ChromeDriver download URL
+            chromedriver_url = None
+            for download in matching_version['downloads'].get('chromedriver', []):
+                if download['platform'] == 'linux64':
+                    chromedriver_url = download['url']
+                    break
+            
+            if not chromedriver_url:
+                raise Exception("Could not find Linux64 ChromeDriver download URL")
+            
+            # Create temporary directory
             temp_dir = tempfile.mkdtemp()
             zip_path = os.path.join(temp_dir, "chromedriver.zip")
             
-            # Download ChromeDriver zip file
-            logger.info(f"Downloading ChromeDriver from {driver_url}")
-            urllib.request.urlretrieve(driver_url, zip_path)
+            # Download ChromeDriver
+            logger.info(f"Downloading ChromeDriver from {chromedriver_url}")
+            urllib.request.urlretrieve(chromedriver_url, zip_path)
             
-            # Extract the ChromeDriver from zip file
+            # Extract the zip file
             with zipfile.ZipFile(zip_path, 'r') as zip_ref:
                 zip_ref.extractall(temp_dir)
             
-            # Get path to ChromeDriver executable
+            # Find the chromedriver binary
             chromedriver_path = os.path.join(temp_dir, "chromedriver-linux64", "chromedriver")
             
-            # Set executable permissions (Unix/Linux only)
+            # Make it executable
             os.chmod(chromedriver_path, stat.S_IRWXU)
             
             logger.info(f"ChromeDriver installed at: {chromedriver_path}")
