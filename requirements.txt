@@ -7,3 +7,4 @@ pytest==8.0.2
 pytest-html==4.1.1
 requests==2.31.0
 behave-html-formatter==0.9.10
+allure-behave==2.13.2

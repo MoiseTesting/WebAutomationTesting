@@ -12,6 +12,17 @@ on:
   # Allow manual triggering from Actions tab
   workflow_dispatch:
 
+# Add permissions
+permissions:
+    contents: write    # Required for pushing to gh-pages
+    pages: write      # Required for deploying to Pages
+    id-token: write   # Required for authentication
+    actions: write    # Required for workflow management
+    checks: write     # Required for test results
+    deployments: write # Required for deployments
+    pull-requests: write # Required for PR comments
+    statuses: write   # Required for commit statuses
+
 # Define the jobs to run
 jobs:
   # Main test execution job
@@ -23,6 +34,9 @@ jobs:
     steps:
     # Step 1: Check out the repository code
     - uses: actions/checkout@v3
+      with:
+       token: ${{ secrets.GITHUB_TOKEN }}
+
 
     # Step 2: Set up Python environment
     - name: Set up Python
@@ -106,17 +120,18 @@ jobs:
         # Create reports directory structure
         mkdir -p reports/history
         mkdir -p reports/screenshots
+        mkdir -p reports/junit
         
         # Run tests with multiple report formats
         behave \
-          features/sample_login.feature \
-          --format pretty \
-          --format html \
-          -o reports/behave-report.html \
-          --format json \
-          -o reports/behave-report.json \
-          --junit \
-          --junit-directory=reports/junit
+         features/sample_login.feature \
+         --format pretty \
+         --format behave_html_formatter:HTMLFormatter \ 
+         --outfile reports/behave-report.html \
+         --format json \
+         --outfile reports/behave-report.json \
+         --junit \
+         --junit-directory=reports/junit
 
 
     # Step 9 generate dashboard
@@ -125,17 +140,26 @@ jobs:
       run: |
        python .github/scripts/generate_dashboard.py
 
-    #Step 10 Deploy to GitHub Pages
+    # Step 10 Configure GitHub Pages
+    - name: Setup Pages
+      if: always()
+      uses: actions/configure-pages@v2
+
+    # Step 11 Upload artifact for deployment
+    - name: Upload artifact
+      if: always()
+      uses: actions/upload-pages-artifact@v1
+      with:
+        path: 'reports'
+
+    #Step 12 Deploy to GitHub Pages
     - name: Deploy to GitHub Pages
       if: always()
-      uses: peaceiris/actions-gh-pages@v3
+      uses: actions/deploy-pages@v1
       with:
-        github_token: ${{ secrets.GITHUB_TOKEN }}
-        publish_dir: ./reports
-        destination_dir: reports/${{ github.run_number }}
-        keep_files: true
+        token: ${{ secrets.GITHUB_TOKEN }}
 
-    # Step 9: Upload test artifacts
+    # Step 13: Upload test artifacts
     - name: Upload test results
       # Ensure this step runs even if tests fail
       if: always()
@@ -150,7 +174,7 @@ jobs:
         # Configure behavior for empty directories
         if-no-files-found: warn
 
-    # Step 10: Process test results (can be expanded)
+    # Step 14: Process test results (can be expanded)
     - name: Process test results
       # Run this step even if previous steps failed
       if: always()
