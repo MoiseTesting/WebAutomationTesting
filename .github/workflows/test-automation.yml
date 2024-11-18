@@ -23,12 +23,21 @@ permissions:
     pull-requests: write # Required for PR comments
     statuses: write   # Required for commit statuses
 
+env:
+  # Environment variables used by GitHub Pages
+  GITHUB_PAGES: true
+  SITE_URL: ${{ github.event.repository.html_url }}
+
+
 # Define the jobs to run
 jobs:
   # Main test execution job
   test:
     # Specify the runner environment
     runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
 
     # Define steps to be executed
     steps:
@@ -143,19 +152,20 @@ jobs:
     # Step 10 Configure GitHub Pages
     - name: Setup Pages
       if: always()
-      uses: actions/configure-pages@v2
+      uses: actions/configure-pages@v4
 
     # Step 11 Upload artifact for deployment
     - name: Upload artifact
       if: always()
-      uses: actions/upload-pages-artifact@v1
+      uses: actions/upload-pages-artifact@v3
       with:
         path: 'reports'
 
     #Step 12 Deploy to GitHub Pages
     - name: Deploy to GitHub Pages
       if: always()
-      uses: actions/deploy-pages@v1
+      id: deployment
+      uses: actions/deploy-pages@v4
       with:
         token: ${{ secrets.GITHUB_TOKEN }}
 
