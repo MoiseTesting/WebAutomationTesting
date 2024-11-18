@@ -39,16 +39,15 @@ jobs:
     # Step 3: Install Google Chrome browser
     - name: Install Chrome
       run: |
-        # Add Google's official signing key
-        wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | sudo apt-key add -
-        # Add Google's Chrome repository
-        sudo sh -c 'echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" >> /etc/sources.list.d/google.list'
-        # Update package list
-        sudo apt-get update
-        # Install Chrome stable version
-        sudo apt-get install -y google-chrome-stable
-        # Verify Chrome installation by printing version
-        google-chrome --version
+       # Update package list
+       sudo apt-get update
+       # Download and install Chrome
+       wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
+       sudo apt install -y ./google-chrome-stable_current_amd64.deb
+       # Clean up downloaded file
+       rm google-chrome-stable_current_amd64.deb
+       # Verify Chrome installation
+       google-chrome --version
 
     # Step 4: Install Python dependencies
     - name: Install dependencies
