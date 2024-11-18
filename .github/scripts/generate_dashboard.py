@@ -38,29 +38,41 @@ class DashboardGenerator:
         """Load and process test results"""
         results = self.default_results.copy()
         
-        # Check for reports directory
-        if not os.path.exists('reports'):
-            logger.warning("Reports directory not found")
-            return results
-
+        logger.info("Starting test results processing")
+        logger.info(f"Current working directory: {os.getcwd()}")
+        
         json_path = 'reports/behave-report.json'
+        
+        # Debug: List all files in reports directory
+        if os.path.exists('reports'):
+            logger.info("Files in reports directory:")
+            for root, dirs, files in os.walk('reports'):
+                for file in files:
+                    logger.info(f"  {os.path.join(root, file)}")
+        
         if not os.path.exists(json_path):
-            logger.warning(f"JSON report not found at {json_path}")
+            logger.warning(f"JSON report not found at: {json_path}")
             return results
-
+        
         try:
             with open(json_path, 'r', encoding='utf-8') as f:
-                logger.info(f"Loading JSON results from {json_path}")
-                json_results = json.load(f)
-                
-                if not json_results:
-                    logger.warning("JSON results file is empty")
+                content = f.read().strip()
+                if not content:
+                    logger.warning("JSON file is empty")
                     return results
-
+                
+                logger.info(f"Reading JSON content (length: {len(content)})")
+                logger.debug(f"JSON content: {content[:500]}...")  # Log first 500 chars
+                
+                json_results = json.loads(content)
+                if not json_results:
+                    logger.warning("JSON results are empty")
+                    return results
+                
                 # Process each feature
                 for feature in json_results:
                     feature_stats = {
-                        'name': feature.get('name', 'Unknown Feature'),
+                        'name': feature.get('name', 'Unknown'),
                         'description': feature.get('description', ''),
                         'scenarios': 0,
                         'passed_scenarios': 0,
@@ -70,54 +82,52 @@ class DashboardGenerator:
                         'passed_steps': 0,
                         'failed_steps': 0
                     }
-
-                    # Get scenarios (elements)
+                    
+                    # Process scenarios
                     scenarios = feature.get('elements', [])
-                    feature_stats['scenarios'] = len(scenarios)
-
-                    # Process each scenario
-                    for scenario in scenarios:
-                        scenario_status = 'passed'
-                        for step in scenario.get('steps', []):
-                            feature_stats['total_steps'] += 1
-                            step_result = step.get('result', {})
-                            step_status = step_result.get('status', 'skipped')
+                    if scenarios:
+                        feature_stats['scenarios'] = len(scenarios)
+                        for scenario in scenarios:
+                            scenario_status = 'passed'
+                            steps = scenario.get('steps', [])
                             
-                            if step_status == 'passed':
-                                feature_stats['passed_steps'] += 1
-                            elif step_status == 'failed':
-                                feature_stats['failed_steps'] += 1
-                                scenario_status = 'failed'
-                            elif step_status == 'skipped':
-                                feature_stats['skipped_scenarios'] += 1
-
-                        if scenario_status == 'passed':
-                            feature_stats['passed_scenarios'] += 1
-                        else:
-                            feature_stats['failed_scenarios'] += 1
-
+                            if steps:
+                                feature_stats['total_steps'] += len(steps)
+                                for step in steps:
+                                    result = step.get('result', {})
+                                    status = result.get('status', 'skipped')
+                                    
+                                    if status == 'passed':
+                                        feature_stats['passed_steps'] += 1
+                                    elif status == 'failed':
+                                        feature_stats['failed_steps'] += 1
+                                        scenario_status = 'failed'
+                                    
+                            if scenario_status == 'passed':
+                                feature_stats['passed_scenarios'] += 1
+                            else:
+                                feature_stats['failed_scenarios'] += 1
+                    
                     results['features'].append(feature_stats)
                     
                     # Update totals
                     results['total_scenarios'] += feature_stats['scenarios']
                     results['passed_scenarios'] += feature_stats['passed_scenarios']
                     results['failed_scenarios'] += feature_stats['failed_scenarios']
-                    results['skipped_scenarios'] += feature_stats['skipped_scenarios']
                     results['total_steps'] += feature_stats['total_steps']
                     results['passed_steps'] += feature_stats['passed_steps']
                     results['failed_steps'] += feature_stats['failed_steps']
-
+                
                 logger.info(f"Processed {len(results['features'])} features")
                 logger.info(f"Total scenarios: {results['total_scenarios']}")
-                logger.info(f"Passed scenarios: {results['passed_scenarios']}")
-                logger.info(f"Failed scenarios: {results['failed_scenarios']}")
-
-                return results
-
+                
+        except json.JSONDecodeError as e:
+            logger.error(f"JSON decode error: {str(e)}")
+            logger.debug("JSON content causing error:", exc_info=True)
         except Exception as e:
-            logger.error(f"Error loading test results: {str(e)}")
-            logger.debug("Using default empty results", exc_info=True)
-            return results
+            logger.error(f"Error loading results: {str(e)}", exc_info=True)
+        
+        return results
 
     def prepare_chart_configs(self, results):
         """Prepare chart configurations"""
