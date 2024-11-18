@@ -1,48 +1,53 @@
-# Name of the workflow as it will appear in GitHub Actions tab
+# Name of the GitHub Actions workflow - appears in the Actions tab
 name: Web Automation Testing
 
-# Define when this workflow will run
+# Define the events that will trigger this workflow
 on:
-  # Trigger workflow on push to main branch
+  # Trigger on push events to main branch
   push:
     branches: [ main ]
-  # Trigger workflow on pull requests to main branch
+  # Trigger on pull request events to main branch
   pull_request:
     branches: [ main ]
-  # Allow manual triggering from GitHub Actions UI
+  # Allow manual triggering from the Actions tab
   workflow_dispatch:
 
-# Define jobs to be executed
+# Define the jobs to run in this workflow
 jobs:
   # Main test job
   test:
-    # Specify runner environment
+    # Specify the type of runner to use (Ubuntu latest version)
     runs-on: ubuntu-latest
     
-    # Define build matrix for different configurations
+    # Define matrix strategy for different configurations
     strategy:
       matrix:
+        # Currently using Python 3.9 only, can be expanded for multiple versions
         python-version: ['3.9']
 
-    # Sequential steps to execute
+    # Sequential steps to be executed in the job
     steps:
-    # Step 1: Check out repository code
+    # Step 1: Check out the repository code
     - uses: actions/checkout@v3
 
-    # Step 2: Setup Python environment
+    # Step 2: Set up Python environment with specified version
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v4
       with:
         python-version: ${{ matrix.python-version }}
 
-    # Step 3: Install Chrome browser
+    # Step 3: Install Google Chrome browser
     - name: Install Chrome
       run: |
+        # Add Google's official signing key
+        wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | sudo apt-key add -
+        # Add Google's Chrome repository
+        sudo sh -c 'echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" >> /etc/sources.list.d/google.list'
         # Update package list
         sudo apt-get update
         # Install Chrome stable version
         sudo apt-get install -y google-chrome-stable
-        # Verify Chrome installation.
+        # Verify Chrome installation by printing version
         google-chrome --version
 
     # Step 4: Install Python dependencies
@@ -50,46 +55,57 @@ jobs:
       run: |
         # Upgrade pip to latest version
         python -m pip install --upgrade pip
-        # Install project dependencies
+        # Install project dependencies from requirements.txt
         pip install -r requirements.txt
-        # Ensure webdriver-manager is installed
-        pip install webdriver-manager
 
-    # Step 5: Create environment configuration
+    # Step 5: Create environment configuration file
     - name: Create env file
       run: |
-        # Create .env file with test configuration
+        # Set test environment to QA
         echo "TEST_ENV=qa" >> .env
+        # Set base URL for tests
         echo "BASE_URL=https://play1.automationcamp.ir/index.html" >> .env
+        # Set timeout values
         echo "DEFAULT_TIMEOUT=10" >> .env
         echo "EXPLICIT_TIMEOUT=20" >> .env
+        # Set browser configuration
         echo "BROWSER=chrome" >> .env
         # Enable headless mode for CI environment
         echo "HEADLESS=True" >> .env
-        # Enable webdriver-manager
-        echo "USE_WEBDRIVER_MANAGER=True" >> .env
 
-    # Step 6: Execute test suite
+    # Step 6: Set up virtual display for headless Chrome
+    - name: Setup display
+      run: |
+        # Install X virtual framebuffer
+        sudo apt-get install -y xvfb
+        # Set display port
+        export DISPLAY=:99
+        # Start virtual framebuffer in background
+        Xvfb :99 -screen 0 1920x1080x24 > /dev/null 2>&1 &
+
+    # Step 7: Execute test suite
     - name: Run tests
       run: |
         # Add current directory to Python path
         export PYTHONPATH=$PYTHONPATH:$(pwd)
-        # Setup virtual display for headless browser
-        export DISPLAY=:99
-        # Start virtual framebuffer
-        sudo Xvfb :99 -screen 0 1920x1080x24 > /dev/null 2>&1 &
-        # Run Behave tests with JUnit reporting
-        behave features/sample_login.feature -f pretty --junit
+        # Enable unbuffered output for better logging
+        export PYTHONUNBUFFERED=1
+        # Print Selenium version for debugging
+        python -c "import selenium; print(f'Selenium version: {selenium.__version__}')"
+        # Verify webdriver availability
+        python -c "from selenium import webdriver; print(f'Available webdriver: {webdriver.__file__}')"
+        # Run Behave tests with verbose output and JUnit reporting
+        behave -v features/sample_login.feature -f pretty --junit
 
-    # Step 7: Save test results and artifacts
+    # Step 8: Save test artifacts
     - name: Upload test results
-      # Run this step even if previous steps fail
+      # Ensure this step runs even if tests fail
       if: always()
       uses: actions/upload-artifact@v3
       with:
         name: test-results
-        # Specify paths to save
+        # Define paths for test artifacts
         path: |
-          screenshots/    # Test failure screenshots
-          reports/       # Test execution reports
-          *.xml         # JUnit XML reports
+          screenshots/    # Directory containing failure screenshots
+          reports/       # Directory containing test reports
+          *.xml         # JUnit XML report files
