@@ -6,8 +6,10 @@ Supports both local and CI/CD environments.
 """
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
-from webdriver_manager.chrome import ChromeDriverManager
 from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.chrome.service import Service as ChromeService
+from webdriver_manager.chrome import ChromeDriverManager
+from webdriver_manager.core.os_manager import ChromeType
 from utilities.config import Config
 import logging
 import os
@@ -40,21 +42,19 @@ class DriverFactory:
             if os.getenv('GITHUB_ACTIONS'):
                 logger.info("Running in GitHub Actions - adding CI/CD specific options")
                 options.add_argument('--no-sandbox')
-                options.add_argument('--headless')
+                options.add_argument('--headless=new')
                 options.add_argument('--disable-dev-shm-usage')
                 options.add_argument('--disable-gpu')
                 options.add_argument('--window-size=1920,1080')
             elif Config.HEADLESS:
-                options.add_argument('--headless')
+                options.add_argument('--headless=new')
             
-            # Setup ChromeDriver with specific version manager
-            driver_manager = ChromeDriverManager()
-            driver_path = driver_manager.install()
-            
-            logger.info(f"ChromeDriver path: {driver_path}")
-            
-            # Create service object
-            service = Service(executable_path=driver_path)
+            # Setup ChromeDriver for Chrome for Testing
+            service = ChromeService(
+                ChromeDriverManager(
+                    chrome_type=ChromeType.CHROMIUM
+                ).install()
+            )
             
             # Create and configure the driver
             driver = webdriver.Chrome(
