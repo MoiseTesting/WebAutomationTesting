@@ -107,10 +107,11 @@ jobs:
         # Run Behave tests with various output formats
         behave \
           features/sample_login.feature \
-          -f pretty \
+          --format pretty \
           --junit \
           --junit-directory=junit-reports \
-          -f html -o reports/behave-report.html
+          --format behave_html_formatter:HTMLFormatter \
+          --outfile reports/behave-report.html
 
     # Step 9: Upload test artifacts
     - name: Upload test results
