@@ -132,15 +132,14 @@ jobs:
         mkdir -p reports/junit
         
         # Run tests with multiple report formats
-        behave \
-         features/sample_login.feature \
-         --format pretty \
-         --format behave_html_formatter:HTMLFormatter \ 
-         --outfile reports/behave-report.html \
-         --format json \
-         --outfile reports/behave-report.json \
-         --junit \
-         --junit-directory=reports/junit
+         behave features/sample_login.feature \
+          --format pretty \
+          --format behave_html_formatter:HTMLFormatter \
+          --outfile reports/behave-report.html \
+          --format json \
+          --outfile reports/behave-report.json \
+          --junit \
+          --junit-directory=reports/junit
 
 
     # Step 9 generate dashboard
