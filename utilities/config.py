@@ -1,4 +1,3 @@
-
 """
 Configuration management for the test framework
 """
@@ -34,12 +33,7 @@ class Config:
     
     @classmethod
     def get_browser_options(cls):
-        """
-        Get Chrome options based on configuration
-        
-        Returns:
-            Options: Configured Chrome options
-        """
+        """Get Chrome options based on configuration"""
         options = Options()
         
         # Basic options
@@ -54,13 +48,8 @@ class Config:
         return options
     
     @classmethod
-    def get_environment_url(cls):
-        """
-        Get the base URL for the current environment
-        
-        Returns:
-            str: Base URL for current environment
-        """
+    def get_base_url(cls):  # Changed method name to match what's being called
+        """Get the base URL for the current environment"""
         logger.info(f"Using URL for {cls.TEST_ENV} environment: {cls.BASE_URL}")
         return cls.BASE_URL
 

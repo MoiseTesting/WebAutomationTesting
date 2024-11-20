@@ -1,15 +1,15 @@
 """
 Factory class for WebDriver creation and management.
-Handles browser driver setup, configuration, and cleanup.
-Supports both local and CI/CD environments.
 """
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
-from webdriver_manager.chrome import ChromeDriverManager
-from utilities.config import Config
-import logging
+import urllib.request
+import zipfile
 import os
+import logging
+import tempfile
+import shutil
 
 logger = logging.getLogger(__name__)
 
@@ -17,17 +17,47 @@ class DriverFactory:
     """Factory class for creating WebDriver instances"""
     
     @staticmethod
-    def get_driver():
-        """
-        Create and return a WebDriver instance
-        Handles both local and CI/CD environments
-        
-        Returns:
-            WebDriver: Configured WebDriver instance
-        """
+    def download_chromedriver():
+        """Download the correct ChromeDriver version"""
         try:
-            # Get base browser options from config
-            options = Config.get_browser_options()
+            # Get Chrome version
+            chrome_process = os.popen('google-chrome --version')
+            chrome_version = chrome_process.read().strip('Google Chrome ').strip().split('.')[0]
+            chrome_process.close()
+            
+            # Construct download URL
+            download_url = f"https://edgedl.me.gvt1.com/edgedl/chrome/chrome-for-testing/{chrome_version}/linux64/chromedriver-linux64.zip"
+            
+            # Create temp directory
+            temp_dir = tempfile.mkdtemp()
+            zip_path = os.path.join(temp_dir, "chromedriver.zip")
+            
+            # Download file
+            logger.info(f"Downloading ChromeDriver from: {download_url}")
+            urllib.request.urlretrieve(download_url, zip_path)
+            
+            # Extract file
+            with zipfile.ZipFile(zip_path, 'r') as zip_ref:
+                zip_ref.extractall(temp_dir)
+            
+            # Find chromedriver path
+            chromedriver_path = os.path.join(temp_dir, 'chromedriver-linux64', 'chromedriver')
+            
+            # Make executable
+            os.chmod(chromedriver_path, 0o755)
+            
+            return chromedriver_path
+            
+        except Exception as e:
+            logger.error(f"Failed to download ChromeDriver: {str(e)}")
+            raise
+    
+    @staticmethod
+    def get_driver():
+        """Create and return a WebDriver instance"""
+        try:
+            # Get browser options from config
+            options = Options()
             
             # Add CI/CD specific options when running in GitHub Actions
             if os.getenv('GITHUB_ACTIONS'):
@@ -37,16 +67,15 @@ class DriverFactory:
                 options.add_argument('--disable-dev-shm-usage')
                 options.add_argument('--disable-gpu')
                 options.add_argument('--window-size=1920,1080')
-            else:
-                logger.info("Running in local environment")
-                if Config.HEADLESS:
-                    options.add_argument('--headless=new')
-                    logger.info("Running in headless mode")
-                else:
-                    logger.info("Running in normal mode")
             
-            # Setup ChromeDriver
-            service = Service(ChromeDriverManager().install())
+            if os.getenv('GITHUB_ACTIONS'):
+                # Use custom ChromeDriver download in CI/CD
+                chromedriver_path = DriverFactory.download_chromedriver()
+                service = Service(executable_path=chromedriver_path)
+            else:
+                # Use webdriver-manager locally
+                from webdriver_manager.chrome import ChromeDriverManager
+                service = Service(ChromeDriverManager().install())
             
             # Create and return the driver
             driver = webdriver.Chrome(
@@ -54,24 +83,9 @@ class DriverFactory:
                 options=options
             )
             
-            # Set window size for non-headless mode
-            if not Config.HEADLESS and not os.getenv('GITHUB_ACTIONS'):
-                driver.set_window_size(1920, 1080)
-            
-            logger.info(f"Created Chrome driver in {'headless' if Config.HEADLESS or os.getenv('GITHUB_ACTIONS') else 'normal'} mode")
+            logger.info(f"Created Chrome driver in {'headless' if os.getenv('GITHUB_ACTIONS') else 'normal'} mode")
             return driver
             
         except Exception as e:
             logger.error(f"Failed to create driver: {str(e)}")
             raise
-
-    @staticmethod
-    def is_running_in_ci():
-        """Check if running in CI environment"""
-        return bool(os.getenv('GITHUB_ACTIONS'))
-
-    # Future enhancements could include:
-    # - Support for other browsers (Firefox, Edge, etc.)
-    # - Custom driver configurations
-    # - Remote WebDriver support
-    # - Container-based browser support

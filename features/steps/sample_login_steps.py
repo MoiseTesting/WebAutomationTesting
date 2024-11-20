@@ -11,10 +11,35 @@ from behave import given, when, then
 from pages.sample_page import SamplePage
 from selenium.webdriver.common.by import By
 from utilities.config import Config
+from typing import Any
+from contextlib import contextmanager
+from datetime import datetime
+import os
 import logging
 import time
 
 logger = logging.getLogger(__name__)
+
+@contextmanager
+def screenshot_on_failure(context: Any, name: str):
+    """
+    Context manager to take screenshots on failure
+    
+    Args:
+        context: Behave context
+        name: Base name for the screenshot file
+    """
+    try:
+        yield
+    except Exception as e:
+        # Create screenshots directory if it doesn't exist
+        os.makedirs('screenshots', exist_ok=True)
+        # Take screenshot with meaningful name
+        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+        screenshot_path = f"screenshots/error_{name}_{timestamp}.png"
+        context.driver.save_screenshot(screenshot_path)
+        logger.error(f"Screenshot saved to {screenshot_path}")
+        raise
 
 @given('I am on the homepage')
 def step_impl(context):
