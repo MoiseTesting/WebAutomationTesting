@@ -32,42 +32,17 @@ class DriverFactory:
     @staticmethod
     def download_chromedriver_for_ci():
         """
-        Download ChromeDriver specifically for CI environment
-        
-        Returns:
-            str: Path to ChromeDriver executable
-        """
+    Download ChromeDriver specifically for CI environment
+    Returns:
+        str: Path to ChromeDriver executable
+    """
         try:
-            # Get Chrome version
-            chrome_version = subprocess.check_output(['google-chrome', '--version'])
-            chrome_version = chrome_version.decode('utf-8').strip().split()[-1].split('.')[0]
-            logger.info(f"Detected Chrome version: {chrome_version}")
-            
-            # Create temp directory
-            temp_dir = tempfile.mkdtemp()
-            zip_path = os.path.join(temp_dir, "chromedriver.zip")
-            
-            # Construct download URL
-            download_url = f"https://chromedriver.storage.googleapis.com/{chrome_version}.0/chromedriver_linux64.zip"
-
-            logger.info(f"Downloading ChromeDriver from: {download_url}")
-            
-            # Download ChromeDriver
-            urllib.request.urlretrieve(download_url, zip_path)
-            
-            # Extract the zip
-            with zipfile.ZipFile(zip_path, 'r') as zip_ref:
-                zip_ref.extractall(temp_dir)
-            
-            # Find chromedriver path
-            chromedriver_path = os.path.join(temp_dir, 'chromedriver-linux64', 'chromedriver')
-            
-            # Make executable
-            os.chmod(chromedriver_path, 0o755)
+            from webdriver_manager.chrome import ChromeDriverManager
+        
+        # Use WebDriver Manager to dynamically install the correct ChromeDriver
+            chromedriver_path = ChromeDriverManager().install()
             logger.info(f"ChromeDriver installed at: {chromedriver_path}")
-            
             return chromedriver_path
-            
         except Exception as e:
             logger.error(f"Error downloading ChromeDriver: {str(e)}")
             raise

@@ -53,25 +53,14 @@ jobs:
       with:
         python-version: '3.9'
 
-    # Step 3: Install Chrome browser
-    - name: Install Chrome
+    # Step 3: Install Chrome and WebDriver Manager
+    - name: Install Chrome and WebDriver Manager
       run: |
-        chrome_version=$(google-chrome --version | awk '{print $3}' | cut -d. -f1)
-        echo "Detected Chrome version: $chrome_version"
-    
-        # Download the matching ChromeDriver version
-        wget -O /tmp/chromedriver.zip https://chromedriver.storage.googleapis.com/${chrome_version}.0/chromedriver_linux64.zip || {
-        echo "Failed to find matching ChromeDriver. Exiting.";
-        exit 1;
-        }
-        sudo mkdir -p /opt/chromedriver
-        sudo unzip /tmp/chromedriver.zip -d /opt/chromedriver
-        sudo chmod +x /opt/chromedriver/chromedriver
-        sudo ln -sf /opt/chromedriver/chromedriver /usr/local/bin/chromedriver
-        
-        # Verify installations
-        google-chrome --version
-        chromedriver --version
+        # Install WebDriver Manager for dynamic ChromeDriver management
+        python -m pip install webdriver-manager
+        # Use WebDriver Manager to download and setup the correct ChromeDriver version
+        python -c "from webdriver_manager.chrome import ChromeDriverManager; print(ChromeDriverManager().install())"
+
 
     # Step 4: Install Python dependencies
     - name: Install dependencies
