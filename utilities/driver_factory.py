@@ -48,7 +48,8 @@ class DriverFactory:
             zip_path = os.path.join(temp_dir, "chromedriver.zip")
             
             # Construct download URL
-            download_url = f"https://storage.googleapis.com/chrome-for-testing-public/stable/linux64/chromedriver-linux64.zip"
+            download_url = f"https://chromedriver.storage.googleapis.com/{chrome_version}.0/chromedriver_linux64.zip"
+
             logger.info(f"Downloading ChromeDriver from: {download_url}")
             
             # Download ChromeDriver

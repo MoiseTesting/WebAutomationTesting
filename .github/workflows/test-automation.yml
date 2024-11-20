@@ -56,26 +56,18 @@ jobs:
     # Step 3: Install Chrome browser
     - name: Install Chrome
       run: |
-        # Update package list
-        sudo apt-get update
-        # Install required utilities
-        sudo apt-get install -y wget unzip
-        # Download Chrome package
-        wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
-        # Install Chrome
-        sudo apt install -y ./google-chrome-stable_current_amd64.deb
         chrome_version=$(google-chrome --version | awk '{print $3}' | cut -d. -f1)
-        echo "Chrome version: ${chrome_version}"
-        
-        # Set up ChromeDriver directory
+        echo "Detected Chrome version: $chrome_version"
+    
+        # Download the matching ChromeDriver version
+        wget -O /tmp/chromedriver.zip https://chromedriver.storage.googleapis.com/${chrome_version}.0/chromedriver_linux64.zip || {
+        echo "Failed to find matching ChromeDriver. Exiting.";
+        exit 1;
+        }
         sudo mkdir -p /opt/chromedriver
-        sudo chmod 777 /opt/chromedriver
-        
-        # Download and setup ChromeDriver
-        wget -O /tmp/chromedriver.zip https://storage.googleapis.com/chrome-for-testing-public/stable/linux64/chromedriver-linux64.zip
-        unzip /tmp/chromedriver.zip -d /opt/chromedriver
-        sudo chmod +x /opt/chromedriver/chromedriver-linux64/chromedriver
-        sudo ln -sf /opt/chromedriver/chromedriver-linux64/chromedriver /usr/local/bin/chromedriver
+        sudo unzip /tmp/chromedriver.zip -d /opt/chromedriver
+        sudo chmod +x /opt/chromedriver/chromedriver
+        sudo ln -sf /opt/chromedriver/chromedriver /usr/local/bin/chromedriver
         
         # Verify installations
         google-chrome --version
