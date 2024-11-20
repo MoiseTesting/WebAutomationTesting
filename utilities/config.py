@@ -40,6 +40,8 @@ class Config:
         options.add_argument('--start-maximized')
         options.add_argument('--disable-extensions')
         options.add_argument('--disable-popup-blocking')
+        # Add window size for better reliability
+        options.add_argument('--window-size=1920,1080')
         
         # Add headless mode if configured
         if cls.HEADLESS:

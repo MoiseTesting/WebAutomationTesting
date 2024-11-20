@@ -28,6 +28,21 @@ def before_scenario(context, scenario):  # type: ignore
     """
     try:
         context.driver = DriverFactory.get_driver()
+        
+        # Double-check window size
+        if not Config.HEADLESS:
+            # Try to maximize again
+            context.driver.maximize_window()
+            
+            # Get and log window size
+            window_size = context.driver.get_window_size()
+            logger.info(f"Scenario window size: {window_size['width']}x{window_size['height']}")
+            
+            # If window is still not full size, set it explicitly
+            if window_size['width'] < 1920:
+                context.driver.set_window_size(1920, 1080)
+                logger.info("Window size adjusted to 1920x1080")
+    
     except Exception as e:
         logger.error(f"Failed to start browser: {str(e)}")
         raise
