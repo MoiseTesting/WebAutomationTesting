@@ -5,15 +5,13 @@ from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
 from webdriver_manager.chrome import ChromeDriverManager
-from webdriver_manager.core.utils import ChromeType
-from utilities.config import config
+from utilities.config import Config
 import urllib.request
 import zipfile
 import os
 import logging
 import tempfile
-import config
-import shutil
+
 
 logger = logging.getLogger(__name__)
 
@@ -67,7 +65,7 @@ class DriverFactory:
         """
         try:
             # Get browser options from config
-            options = config.get_browser_options()
+            options = Config.get_browser_options()
             
             # Add CI/CD specific options when running in GitHub Actions
             if os.getenv('GITHUB_ACTIONS'):
@@ -93,7 +91,7 @@ class DriverFactory:
             )
             
             # Additional window management for local runs
-            if not os.getenv('GITHUB_ACTIONS') and not config.HEADLESS:
+            if not os.getenv('GITHUB_ACTIONS') and not Config.HEADLESS:
                 # Try to maximize window
                 driver.maximize_window()
                 
@@ -108,7 +106,7 @@ class DriverFactory:
             
             logger.info(
                 f"Created Chrome driver in "
-                f"{'headless' if config.HEADLESS or os.getenv('GITHUB_ACTIONS') else 'normal'} mode"
+                f"{'headless' if Config.HEADLESS or os.getenv('GITHUB_ACTIONS') else 'normal'} mode"
             )
             
             return driver
