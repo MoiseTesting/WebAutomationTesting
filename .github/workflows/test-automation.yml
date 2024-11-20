@@ -99,6 +99,7 @@ jobs:
         echo "DEFAULT_TIMEOUT=10" >> .env
         echo "EXPLICIT_TIMEOUT=20" >> .env
         echo "BROWSER=chrome" >> .env
+        echo "HEADLESS=True" >> .env
 
     # Step 7: Setup virtual display for headless testing
     - name: Setup display

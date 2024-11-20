@@ -12,17 +12,25 @@ logger = logging.getLogger(__name__)
 class Config:
     """Configuration management class"""
     
-    # Load environment variables
-    load_dotenv()
-    
-    # Environment settings
-    TEST_ENV = os.getenv('TEST_ENV', 'qa')
-    BASE_URL = os.getenv('BASE_URL', 'https://play1.automationcamp.ir/index.html')
-    HEADLESS = os.getenv('HEADLESS', 'False').lower() == 'true'
-    
-    # Timeouts
-    DEFAULT_TIMEOUT = int(os.getenv('DEFAULT_TIMEOUT', 10))
-    EXPLICIT_TIMEOUT = int(os.getenv('EXPLICIT_TIMEOUT', 20))
+    # Initialize configuration
+    @classmethod
+    def init(cls):
+        # Load environment variables
+        load_dotenv()
+        
+        # Environment settings
+        cls.TEST_ENV = os.getenv('TEST_ENV', 'qa')
+        cls.BASE_URL = os.getenv('BASE_URL', 'https://play1.automationcamp.ir/index.html')
+        cls.HEADLESS = os.getenv('HEADLESS', 'False').lower() == 'true'
+        
+        # Browser settings
+        cls.BROWSER = os.getenv('BROWSER', 'chrome')
+        
+        # Timeouts
+        cls.DEFAULT_TIMEOUT = int(os.getenv('DEFAULT_TIMEOUT', 10))
+        cls.EXPLICIT_TIMEOUT = int(os.getenv('EXPLICIT_TIMEOUT', 20))
+        
+        logger.info(f"Initialized configuration for {cls.TEST_ENV} environment")
     
     @classmethod
     def get_browser_options(cls):
@@ -55,3 +63,6 @@ class Config:
         """
         logger.info(f"Using URL for {cls.TEST_ENV} environment: {cls.BASE_URL}")
         return cls.BASE_URL
+
+# Initialize configuration when module is loaded
+Config.init()

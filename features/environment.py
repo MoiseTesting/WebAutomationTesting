@@ -1,4 +1,7 @@
-# features/environment.py
+
+"""
+Behave environment configuration
+"""
 from utilities.driver_factory import DriverFactory
 from utilities.config import Config
 import logging
@@ -8,38 +11,28 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 def before_all(context):
-    """Initialize test configuration"""
-    context.config = Config
-    logger.info(f"Starting tests in {Config.ENV} environment")
-    logger.info(f"Base URL: {Config.get_base_url()}")
+    """
+    Setup before all tests
+    """
+    logger.info(f"Starting tests in {Config.TEST_ENV} environment")
+    logger.info(f"Base URL: {Config.BASE_URL}")
 
 def before_scenario(context, scenario):
     """
-    Set up WebDriver before each scenario
-    
-    Args:
-        context: Behave context object
-        scenario: Current scenario being executed
+    Setup before each scenario
     """
     try:
         context.driver = DriverFactory.get_driver()
-        context.driver.implicitly_wait(Config.DEFAULT_TIMEOUT)
-        logger.info(f"Started {Config.BROWSER} browser")
     except Exception as e:
         logger.error(f"Failed to start browser: {str(e)}")
         raise
 
 def after_scenario(context, scenario):
     """
-    Clean up after each scenario
-    
-    Args:
-        context: Behave context object
-        scenario: Current scenario being executed
+    Cleanup after each scenario
     """
     try:
         if hasattr(context, 'driver'):
             context.driver.quit()
-            logger.info("Browser closed")
     except Exception as e:
-        logger.error(f"Failed to close browser: {str(e)}")
+        logger.error(f"Error closing browser: {str(e)}")
