@@ -9,14 +9,18 @@ WAT/
 ├── features/                     # BDD test features and step definitions
 │   ├── steps/                   # Step definition files
 │   │   ├── __init__.py         # Makes steps directory a Python package
-│   │   └── sample_login_steps.py    # Step definitions for login tests
+│   │   ├── sample_login_steps.py    # Step definitions for login tests
+│   │   ├── homepage_steps.py        # Step definitions for homepage navigation
+│   │   ├── formspage_steps.py       # Step definitions for Forms page tests
 │   ├── environment.py           # Behave hooks for test setup/teardown
-│   └── sample_login.feature     # Feature file for login tests
+│   ├── sample_login.feature     # Feature file for login tests
+│   └── forms_page.feature       # Feature file for Forms page functionality
 │
 ├── pages/                       # Page Object Model implementations
 │   ├── __init__.py             # Makes pages directory a Python package
 │   ├── base_page.py            # Base class with common methods
-│   └── sample_page.py          # Login page specific object
+│   ├── sample_page.py          # Login page-specific object
+│   └── forms_page.py           # Forms page-specific object
 │
 ├── utilities/                   # Framework utilities and configurations
 │   ├── __init__.py             # Makes utilities directory a Python package
@@ -24,7 +28,11 @@ WAT/
 │   ├── config.py               # Test configuration and environment settings
 │   └── env_switcher.py         # Utility to switch between environments
 │
-├── screenshots/                 # Directory for failure screenshots
+├── screenshots/                 # Directory for screenshots (success and failures)
+├── downloads/                   # Directory for downloaded files during tests
+├── CV_ZIP/                      # Directory containing test files (CV, ZIP)
+│   ├── index.html
+│   └── github-pages.zip
 ├── .env                        # Environment configuration
 ├── .env.dev                    # Development environment settings
 ├── .env.prod                   # Production environment settings
@@ -35,10 +43,12 @@ WAT/
 - Environment-specific configuration (dev, qa, prod)
 - Page Object Model implementation
 - Explicit wait strategies
-- Screenshot capture on test failures
+- Screenshot capture on test failures & debugging
 - Multiple browser support
 - Headless mode support
 - GitHub Actions integration for CI/CD
+- File upload and download handling
+- Dynamic file paths for portability in CI/CD (e.g., GitHub Actions)
 
 ## Setup and Installation
 
@@ -85,6 +95,7 @@ behave
 Run specific feature:
 ```bash
 behave features/sample_login.feature
+
 ```
 
 Run with specific tags:
@@ -113,6 +124,12 @@ Currently implemented test scenarios include:
 4. Registering a new account
 5. filling out registartion form and Pizza form
 
+ Forms Page Tests
+6. Successfully navigate to the Forms page.
+7. Fill out the basic form controls and submit.
+8. Verify the "Download File" functionality.
+9. Fill out the "Non-English Labels and Locators" section.
+
 ### Utilities
 - **DriverFactory**: Manages WebDriver creation with version compatibility
 - **Config**: Handles environment configuration
@@ -122,7 +139,8 @@ Currently implemented test scenarios include:
 - Detailed logging with different log levels
 - Screenshot capture on test failures
 - Environment-specific logging
-- Step-by-step execution logging
+- Step-by-step execution logging for all scenarios.
+
 
 ## Environment Configuration
 The framework supports three environments:
@@ -155,6 +173,7 @@ This project uses GitHub Actions for continuous integration. The workflow:
 - Captures and stores test artifacts
 - Provides test execution reports
 
+
 ## Contributing
 1. Fork the repository
 2. Create your feature branch
@@ -181,4 +200,4 @@ This project uses GitHub Actions for continuous integration. The workflow:
 ## Contact
 [Moise Dore]
 [MoiseDore@gmail.com]
-[LinkedIn](https://www.linkedin.com/in/moise-dore-1b5a6a
+[LinkedIn](https://www.linkedin.com/in/moise-dore-1b5a6a)
