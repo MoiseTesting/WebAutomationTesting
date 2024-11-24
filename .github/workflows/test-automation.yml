@@ -193,7 +193,7 @@ jobs:
           if [ -d "$dir" ]; then
             echo "$dir contents:"
             ls -l "$dir"
-          else
+          else 
             echo "$dir not found"
           fi
         done
