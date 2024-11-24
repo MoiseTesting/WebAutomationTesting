@@ -5,9 +5,18 @@ Handles test setup and teardown at different levels
 from utilities.driver_factory import DriverFactory
 from utilities.config import Config
 import logging
+import os
+from datetime import datetime
 
 # Set up logging
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    handlers=[
+        logging.StreamHandler(),
+        logging.FileHandler("logs/test_run.log", mode="w")
+    ]
+)
 logger = logging.getLogger(__name__)
 
 def before_all(context):  # type: ignore
@@ -29,16 +38,11 @@ def before_scenario(context, scenario):  # type: ignore
     try:
         context.driver = DriverFactory.get_driver()
         
-        # Double-check window size
+        # Maximize the window size for better visibility
         if not Config.HEADLESS:
-            # Try to maximize again
             context.driver.maximize_window()
-            
-            # Get and log window size
             window_size = context.driver.get_window_size()
             logger.info(f"Scenario window size: {window_size['width']}x{window_size['height']}")
-            
-            # If window is still not full size, set it explicitly
             if window_size['width'] < 1920:
                 context.driver.set_window_size(1920, 1080)
                 logger.info("Window size adjusted to 1920x1080")
@@ -55,6 +59,16 @@ def after_scenario(context, scenario):  # type: ignore
         scenario: Current scenario that was executed
     """
     try:
+        if scenario.status == "failed" and hasattr(context, "driver"):
+            # Save screenshot for failed scenarios
+            timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
+            screenshot_name = f"{scenario.name.replace(' ', '_')}_{timestamp}.png"
+            screenshots_dir = "WAT/screenshots"
+            os.makedirs(screenshots_dir, exist_ok=True)
+            screenshot_path = os.path.join(screenshots_dir, screenshot_name)
+            context.driver.save_screenshot(screenshot_path)
+            logger.info(f"Screenshot for failed scenario saved at: {screenshot_path}")
+        
         if hasattr(context, 'driver'):
             context.driver.quit()
     except Exception as e:

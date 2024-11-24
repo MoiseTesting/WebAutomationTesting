@@ -102,17 +102,28 @@ class BasePage:
     
     def take_screenshot(self, name):
         """
-        Take a screenshot for debugging purposes
-        
-        Args:
-            name: Name for the screenshot file
+        Take a screenshot for debugging purposes and save it in the 'screenshots' folder in the root of the project.
+        The filename includes a timestamp to ensure uniqueness.
         """
+        import os
+        from datetime import datetime
         try:
-            screenshot_path = f"screenshots/{name}.png"
+            logger.info(f"Attempting to take a screenshot with name: {name}")
+            
+            # Ensure the screenshots directory exists
+            screenshots_dir = os.path.abspath(os.path.join(os.getcwd(), "screenshots"))
+            os.makedirs(screenshots_dir, exist_ok=True)
+            
+            # Add a timestamp to the filename
+            timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
+            screenshot_path = os.path.join(screenshots_dir, f"{name}_{timestamp}.png")
+            
+            # Save the screenshot
             self.driver.save_screenshot(screenshot_path)
-            logger.info(f"Screenshot saved: {screenshot_path}")
+            logger.info(f"Screenshot saved successfully at: {screenshot_path}")
         except Exception as e:
             logger.error(f"Failed to take screenshot: {str(e)}")
+
 
     def wait_for_element_present(self, locator, timeout=None):
         """

@@ -240,10 +240,10 @@ class DashboardGenerator:
                 )
 
         # Write dashboard
-        with open('reports/index.html', 'w', encoding='utf-8') as f:
+        with open('reports/TestResultsDashBoard.html', 'w', encoding='utf-8') as f:
             f.write(html)
         
-        logger.info("Dashboard generated successfully at reports/index.html")
+        logger.info("Dashboard generated successfully at reports/TestResultsDashBoard.html")
 
 def main():
     """Main function to generate dashboard"""
