@@ -139,7 +139,8 @@ Currently implemented test scenarios include:
 - Detailed logging with different log levels
 - Screenshot capture on test failures
 - Environment-specific logging
-- Step-by-step execution logging
+- Step-by-step execution logging for all scenarios.
+
 
 ## Environment Configuration
 The framework supports three environments:
@@ -172,10 +173,6 @@ This project uses GitHub Actions for continuous integration. The workflow:
 - Captures and stores test artifacts
 - Provides test execution reports
 
-##Logging and Debugging
-- Detailed logging with different log levels.
-- Screenshot capture for debugging and test failures.
-- Step-by-step execution logs for all scenarios.
 
 ## Contributing
 1. Fork the repository
