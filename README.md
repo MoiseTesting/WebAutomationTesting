@@ -174,6 +174,31 @@ This project uses GitHub Actions for continuous integration. The workflow:
 - Provides test execution reports
 
 
+## View Test Results in the Dashboard
+To access the latest test results and dashboard:
+-1. Run the Workflow
+
+-If you're a contributor to this repository, navigate to the Actions tab in the GitHub repository.
+-Manually trigger the test workflow or wait for it to run on a new push.
+
+-2. Download the Latest Artifact
+-Once the workflow completes, navigate to the Actions tab.
+-Select the latest workflow run.
+-Scroll down to the Artifacts section at the bottom of the page.
+-Download the test-results artifact.
+
+-3. Extract the Artifact
+
+-Extract the downloaded artifact (usually a .zip file) to a folder on your local machine.
+-Inside the extracted folder, you’ll find a dashboard.html file.
+-Open the Dashboard
+
+-4. Open the TestResultsDashBoard.html file in your browser to view the latest test results. This interactive dashboard includes:
+-A summary of test scenarios (passed, failed, skipped).
+-Feature-wise results with detailed statistics.
+-Graphical representations of test performance.
+
+
 ## Contributing
 1. Fork the repository
 2. Create your feature branch
