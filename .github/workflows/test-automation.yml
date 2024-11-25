@@ -35,9 +35,7 @@ jobs:
   test:
     # Specify the runner environment
     runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
+    
 
     # Define steps to be executed
     steps:
@@ -163,12 +161,7 @@ jobs:
           echo "No JUnit report found"
         fi
 
-    # Step 9: Debug downloads folder
-    - name: Debug downloads folder
-      if: always()
-      run: |
-        echo "Contents of downloads folder:"
-        ls -la downloads/    
+  
 
     # Step 10: Generate dashboard
     - name: Generate Dashboard
