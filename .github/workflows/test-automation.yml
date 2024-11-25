@@ -163,6 +163,13 @@ jobs:
           echo "No JUnit report found"
         fi
 
+    # Step 9: Debug downloads folder
+    - name: Debug downloads folder
+      if: always()
+      run: |
+        echo "Contents of downloads folder:"
+        ls -la downloads/    
+
     # Step 10: Generate dashboard
     - name: Generate Dashboard
       if: always()
@@ -183,6 +190,7 @@ jobs:
           screenshots/
           reports/
           junit-reports/
+          logs/
         if-no-files-found: warn
 
     # Step 15: Process test results

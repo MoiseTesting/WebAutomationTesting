@@ -63,17 +63,18 @@ class DriverFactory:
             # Determine the dynamic downloads directory
             project_root = os.getcwd()
             download_directory = os.path.join(project_root, "downloads")
-            os.makedirs(download_directory, exist_ok=True)
+            os.makedirs(download_directory, exist_ok=True)  # Ensure the directory exists
             logger.info(f"Download directory being set to: {download_directory}")
 
-            # Add download directory configuration
+            # Add download preferences
             prefs = {
-                "download.default_directory": download_directory.replace("/", "\\"),  # Ensure Windows-friendly path
+                "download.default_directory": download_directory,  # Platform-independent path
                 "download.prompt_for_download": False,  # Disable download prompts
                 "safebrowsing.enabled": True,  # Enable Safe Browsing
                 "profile.default_content_settings.popups": 0,  # Disable popups for file downloads
                 "profile.default_content_setting_values.automatic_downloads": 1,  # Allow multiple downloads
             }
+
             options.add_experimental_option("prefs", prefs)
 
             # Handle CI/CD environment
