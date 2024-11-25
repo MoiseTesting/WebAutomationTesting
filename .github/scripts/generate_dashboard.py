@@ -39,11 +39,13 @@ class DashboardGenerator:
         """Load test results from JUnit XML since JSON parsing is failing"""
         results = self.default_results.copy()
         
-        junit_path = 'reports/junit/TESTS-sample_login.xml'
+        junit_dir = 'reports/junit/'
+        junit_files = [os.path.join(junit_dir, f) for f in os.listdir(junit_dir) if f.endswith('.xml')]
         
         try:
-            tree = ET.parse(junit_path)
-            root = tree.getroot()
+            for junit_file in junit_files:
+                tree = ET.parse(junit_file)
+                root = tree.getroot()
             
             # Parse test suite data
             results['total_scenarios'] = int(root.get('tests', 0))
@@ -66,13 +68,13 @@ class DashboardGenerator:
             feature_stats = {
                 'name': feature_name,
                 'description': 'Test automation feature',
-                'scenarios': results['total_scenarios'],
-                'passed_scenarios': results['passed_scenarios'],
-                'failed_scenarios': results['failed_scenarios'],
-                'skipped_scenarios': results['skipped_scenarios'],
-                'total_steps': results['total_steps'],
-                'passed_steps': results['passed_steps'],
-                'failed_steps': results['total_steps'] - results['passed_steps']
+                'scenarios': int(root.get('tests', 0)),
+                'passed_scenarios': int(root.get('tests', 0)) - int(root.get('failures', 0)) - int(root.get('skipped', 0)),
+                'failed_scenarios': int(root.get('failures', 0)),
+                'skipped_scenarios': int(root.get('skipped', 0)),
+                'total_steps': 0,  # Update step counts in a similar loop if needed
+                'passed_steps': 0, # Update step counts in a similar loop if needed
+                'failed_steps': 0  # Update step counts in a similar loop if needed
             }
             results['features'].append(feature_stats)
             
@@ -88,12 +90,15 @@ class DashboardGenerator:
     
     def load_junit_results(self):
         """Load results from JUnit XML"""
-        junit_path = 'reports/junit/TESTS-sample_login.xml'
-        if os.path.exists(junit_path):
+        junit_dir = 'reports/junit/'
+        junit_files = [os.path.join(junit_dir, f) for f in os.listdir(junit_dir) if f.endswith('.xml')]
+        if os.path.exists(junit_file):
             try:
                 import xml.etree.ElementTree as ET
-                tree = ET.parse(junit_path)
-                root = tree.getroot()
+                for junit_file in junit_files:
+                    tree = ET.parse(junit_file)
+                    root = tree.getroot()
+                
                 
                 # Log the XML content
                 logger.info(f"JUnit XML content: {ET.tostring(root, encoding='unicode')}")
