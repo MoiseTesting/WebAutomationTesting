@@ -102,7 +102,7 @@ class DashboardGenerator:
                 import xml.etree.ElementTree as ET
                 for junit_file in junit_files:
                     tree = ET.parse(junit_file)
-                    root = tree.getroot()
+                    root = tree.getroot() 
                 
                 
                 # Log the XML content
