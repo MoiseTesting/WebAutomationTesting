@@ -7,17 +7,23 @@ from utilities.config import Config
 import logging
 import os
 from datetime import datetime
+logger = logging.getLogger(__name__)
+
+# Ensure the logs directory exists
+logs_dir = "logs"
+if not os.path.exists(logs_dir):
+    os.makedirs(logs_dir)
 
 # Set up logging
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
     handlers=[
-        logging.StreamHandler(),
-        logging.FileHandler("logs/test_run.log", mode="w")
+        logging.FileHandler("logs/test_run.log", mode="w"),
+        logging.StreamHandler()
     ]
 )
-logger = logging.getLogger(__name__)
+
 
 def before_all(context):  # type: ignore
     """
