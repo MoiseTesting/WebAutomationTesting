@@ -122,12 +122,16 @@ Currently implemented test scenarios include:
 2. Successful Login
 3. Invalid Login Attempt
 4. Registering a new account
-5. filling out registartion form and Pizza form
+5. filling out registration form and Pizza form
 
- Forms Page Tests
+Forms Page Tests
+
 6. Successfully navigate to the Forms page.
+
 7. Fill out the basic form controls and submit.
+
 8. Verify the "Download File" functionality.
+
 9. Fill out the "Non-English Labels and Locators" section.
 
 ### Utilities
