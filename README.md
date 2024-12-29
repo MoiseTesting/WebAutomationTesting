@@ -1,4 +1,4 @@
-# Web Automation Testing Framework
+#  Selenium Web Automation Testing Framework
 
 ## Overview
 A test automation framework built using Python, Selenium WebDriver, and Behave for automated testing of web applications. The framework follows the Page Object Model design pattern and uses BDD (Behavior Driven Development) approach.
