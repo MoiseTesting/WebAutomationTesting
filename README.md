@@ -180,13 +180,18 @@ This project uses GitHub Actions for continuous integration. The workflow:
 
 ## View Test Results in the Dashboard
 To access the latest test results and dashboard:
+
 [![Web Automation Testing](https://github.com/MoiseTesting/WebAutomationTesting/actions/workflows/test-automation.yml/badge.svg)](https://github.com/MoiseTesting/WebAutomationTesting/actions/workflows/test-automation.yml)
+
 -1. Run the Workflow
 
--If you're a contributor to this repository, navigate to the Actions tab in the GitHub repository.
+
+-navigate to the Actions tab in the GitHub repository.
+
 -Manually trigger the test workflow or wait for it to run on a new push.
 
 -2. Download the Latest Artifact
+
 -Once the workflow completes, navigate to the Actions tab.
 -Select the latest workflow run.
 -Scroll down to the Artifacts section at the bottom of the page.
